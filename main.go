@@ -1,29 +1,26 @@
 package main
 
 import (
-	"os"
+	"go_abacatepay/handlers"
+	"go_abacatepay/internal/abacatepayclient"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/pedrinhoas7/go_abacatepay/service/abacatepayService"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	app := fiber.New()
+	// Cria o cliente AbacatePay com URL base e token
+	client := abacatepayclient.NewClient(
+		"https://api.abacatepay.com",
+		"",
+	)
 
-	app.Post("/api/pix", func(c *fiber.Ctx) error {
-		var req abacatepayService.ChargeRequest
-		if err := c.BodyParser(&req); err != nil {
-			return c.Status(400).SendString("JSON inválido")
-		}
+	// Cria o router gin
+	r := gin.Default()
 
-		token := os.Getenv("ABACATE_TOKEN") // use dotenv se preferir
-		resp, err := abacatepayService.CreatePixCharge(token, req)
-		if err != nil {
-			return c.Status(500).SendString("Erro ao gerar cobrança")
-		}
+	// Registra as rotas e passa o client para os handlers
+	r.POST("/clientes", handlers.CriarClienteHandler(client))
+	r.POST("/pagamentos", handlers.CriarPagamentoHandler(client))
 
-		return c.Send(resp)
-	})
-
-	app.Listen(":3000")
+	// Roda o servidor na porta 8000
+	r.Run(":8000")
 }
